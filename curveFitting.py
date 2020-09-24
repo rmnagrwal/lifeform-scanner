@@ -10,6 +10,7 @@ import random, pylab, numpy
 import pandas as pd
 from matplotlib import pyplot as plt
 import datetime
+from get_connector import get_connector
 #set line width
 pylab.rcParams['lines.linewidth'] = 4
 #set font size for titles 
@@ -33,6 +34,9 @@ pylab.rcParams['legend.numpoints'] = 1
 
 random.seed(0)
 
+def isNaN(num):
+    return num != num
+
 def getDataPd(filepath1, header1 = [0]):
     df = pd.read_csv(filepath1, header = header1 )
     return df
@@ -44,12 +48,17 @@ def rSquared(observed, predicted):
     # print(meanError,numpy.var(observed))
     return (1 - (meanError/numpy.var(observed)))
 
-
 class envVariable(object):
     def __init__(self, lat1, long1, year1, data1):
         self.latitude = float(lat1)
         self.longitude = float(long1)
-        self.year = int(year1)
+        # global yearIndex
+        # print(year1)
+        # print(len(str(year1)))
+        if len(str(year1)) > 4:
+            self.year = int(year1[yearIndex:yearIndex+4])
+        else:
+            self.year = int(year1)
         self.data = float(data1)
         
     def getloc(self):
@@ -59,13 +68,42 @@ class envVariable(object):
     def getdata(self):
         return self.data
     
-def getEnvData(df, variables, varHeader, 
-               yearHeader, latHeader, longHeader):
+def getEnvData(df, varHeader, 
+               yearHeader, latHeader, longHeader, isDataYearly=True):
+    variables = [[] for i in range(len(varHeader))]
     length1 = df.shape[0]
     for j in range(len(variables)):
         for i in range(length1):
             object1 = envVariable(df[latHeader][i], df[longHeader][i], df[yearHeader][i], df[varHeader[j]][i])
             variables[j].append(object1)
+    if isDataYearly == False:
+        yearsList = []
+        newVariables = [[] for i in range(len(variables)) ]
+        for i in range(length1):
+            if variables[0][i].getyear() not in yearsList:
+                yearsList.append(variables[0][i].getyear())
+        yearsList.sort()
+        for k in range(len(variables)):
+            for i in range(len(yearsList)):
+                curYear = yearsList[i]
+                curLatSum = 0
+                curLongSum = 0
+                curDataSum = 0
+                counter1 = 0
+                for j in range(length1):
+                    if variables[k][j].getyear() == curYear:
+                        counter1 += 1
+                        curDataSum += variables[k][j].getdata()
+                        curLatSum += variables[k][j].getloc()[0]
+                        curLongSum += variables[k][j].getloc()[1]
+                curDataSum = curDataSum/counter1
+                curLatSum = curLatSum/counter1
+                curLongSum = curLongSum/counter1
+                # print(curYear, curDataSum)
+                newVariables[k].append(envVariable(curLatSum, curLongSum,curYear,curDataSum))
+        variables = newVariables
+        # print(len(variables[0]))
+    return variables
 
 def splitData(xVals, yVals):
     toTrain = random.sample(range(len(xVals)),
@@ -79,35 +117,55 @@ def splitData(xVals, yVals):
             testX.append(xVals[i])
             testY.append(yVals[i])
     return trainX, trainY, testX, testY          
-    
+
 outPath = 'outputGraphs'
+fileType = '.png'
+connector1 = get_connector()
 curTime = datetime.datetime.now()
 curTime = curTime.strftime("%Y%m%d%H%M%S")
 # print(curTime)
-myFilePath = 'airPortData.csv'
+myFilePath = 'academy.csv'
 myDataframe = getDataPd(myFilePath)
 tempData = []
 precipData = []
-envVar = [tempData, precipData]
-varNames = ['TAVG', 'PRCP']
-plotTitles = ['Temperature', 'Precipitation']
+varNames = ['TAVG']
+plotTitles = ['Precipitation']
 yearH = 'DATE'
+dateFormat = 'DD-MM-YYYY'
+global yearIndex
+for i in range(0,len(dateFormat)-3):
+    # print(dateFormat[i:i+4])
+    if dateFormat[i:i+4] == 'YYYY':
+        yearIndex = i
+        break
+# print(yearIndex)
 latH = 'LATITUDE'
 longH = 'LONGITUDE'
 futureYears = [2030,2040,2050,2060,2070,2080]
+# futureYears = [2025,2030,2035,2040]
+# futureYears = [2021, 2022, 2023, 2024]
 #print(myDataframe[latH][4], myDataframe[longH][4], myDataframe[yearH][4], my)
-getEnvData(myDataframe, envVar, varNames, yearH, latH, longH)
+envVar = getEnvData(myDataframe, varNames, yearH, latH, longH, isDataYearly = False)
 #print(tempData[2].getdata())
 
-
+# print(len(envVar[0]))
 for k in range(len(envVar)):
     xvals, yvals = [], []
     for data1 in envVar[k]:
         xvals.append(data1.getyear())
         yvals.append(data1.getdata())
-    xvals, yvals = xvals[:-1], yvals[:-1]
+    indexToPop = []    
+    for i in range(len(xvals)):
+        if isNaN(xvals[i]) or isNaN(yvals[i]):
+            indexToPop.append(i)
+            
+    for i in range(len(indexToPop)):
+        xvals.pop(indexToPop[i]-i)
+        yvals.pop(indexToPop[i]-i)
+    # print(xvals, yvals)       
+    #xvals, yvals = xvals[:-1], yvals[:-1]
     
-    numSubsets = 10
+    numSubsets = 100
     dimensions = (1, 2, 3, 4)
     rSquares = {}
     rSqMeanStd = []
@@ -129,13 +187,17 @@ for k in range(len(envVar)):
         rSqMeanStd.append((d,mean,sd))
         print('For dimensionality', d, 'mean =', mean,
               'Std =', sd)
-    bestFitDegi = 0
+    bestFitDegInd = 0
     for i in range(1,len(rSqMeanStd)):
         if rSqMeanStd[i][1]>rSqMeanStd[i-1][1]:
-            bestFitDegi = i
+            bestFitDegInd = i
         else:
             break
-    model = pylab.polyfit(xvals,yvals,rSqMeanStd[bestFitDegi][0])
+    # bestFitDegInd = 0
+    print('----- The best fit polynomial is -> ' + str(rSqMeanStd[bestFitDegInd][0])+ ' Degree Poly.')
+    print('With R2 mean value = ' + str(rSqMeanStd[bestFitDegInd][1]) \
+          + 'and std = ' +str(rSqMeanStd[bestFitDegInd][2]) + ' ----' )
+    model = pylab.polyfit(xvals,yvals,rSqMeanStd[bestFitDegInd][0])
     estvals = pylab.polyval(model, xvals+ futureYears)
     plt.plot(xvals,yvals, label = 'Observed Data')
     plt.plot(xvals + futureYears , estvals,'--', color = 'red', label = 'Best fit curve')
@@ -144,7 +206,8 @@ for k in range(len(envVar)):
     plt.grid()
     plt.legend()
     plt.title(label=plotTitles[k])
-    plt.savefig(curTime+plotTitles[k]+'.png')
+    currOutPath = outPath + connector1 + curTime+plotTitles[k]+fileType
+    plt.savefig(currOutPath, bbox_inches ="tight")
     plt.show()
 
     # # #print(rSquares[1])
