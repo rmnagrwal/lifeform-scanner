@@ -124,12 +124,12 @@ connector1 = get_connector()
 curTime = datetime.datetime.now()
 curTime = curTime.strftime("%Y%m%d%H%M%S")
 # print(curTime)
-myFilePath = 'academy.csv'
+myFilePath = 'airPortData.csv'
 myDataframe = getDataPd(myFilePath)
 tempData = []
 precipData = []
 varNames = ['TAVG']
-plotTitles = ['Precipitation']
+plotTitles = ['Temperature']
 yearH = 'DATE'
 dateFormat = 'DD-MM-YYYY'
 global yearIndex
@@ -205,6 +205,8 @@ for k in range(len(envVar)):
     plt.annotate(lastPointStr, (futureYears[-1],estvals[-1]))
     plt.grid()
     plt.legend()
+    plt.ylabel(plotTitles[k])
+    plt.xlabel('Years')
     plt.title(label=plotTitles[k])
     currOutPath = outPath + connector1 + curTime+plotTitles[k]+fileType
     plt.savefig(currOutPath, bbox_inches ="tight")
