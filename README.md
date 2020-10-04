@@ -19,13 +19,13 @@ Now you are ready to start
 
 ### Plots of each Parameter vs Fraction of no. of species
 1. Teamperature
-![image](https://raw.githubusercontent.com/rmnagrwal/lifeform-scanner/master/lomdi/kde_temp_lomdi.png)
+![image](https://raw.githubusercontent.com/rmnagrwal/lifeform-scanner/master/coyote/kde_temp_coyote.png)
 2. Soil Temperature
-![image](https://raw.githubusercontent.com/rmnagrwal/lifeform-scanner/master/lomdi/soil_temp_lomdi.png)
+![image](https://raw.githubusercontent.com/rmnagrwal/lifeform-scanner/master/coyote/soil_temp_coyote.png)
 3. Transmission Percent
-![image](https://raw.githubusercontent.com/rmnagrwal/lifeform-scanner/master/lomdi/trans_lomdi.png)
+![image](https://raw.githubusercontent.com/rmnagrwal/lifeform-scanner/master/coyote/trans_coyote.png)
 4. Optical thickness
-![image](https://raw.githubusercontent.com/rmnagrwal/lifeform-scanner/master/lomdi/optical_lomdi.png)
+![image](https://raw.githubusercontent.com/rmnagrwal/lifeform-scanner/master/coyote/optical_coyote.png)
 
 ### Final Prediction over Space
-![image](https://raw.githubusercontent.com/rmnagrwal/lifeform-scanner/master/lomdi/inter_map.png)
+![image](https://raw.githubusercontent.com/rmnagrwal/lifeform-scanner/master/coyote/inter_map.png)
